@@ -1,4 +1,7 @@
-use leptos::prelude::*;
+use leptos::{
+    ev::SubmitEvent,
+    prelude::*
+};
 use reactive_stores::{Store, StoreFieldIterator};
 
 #[component]
@@ -304,6 +307,97 @@ fn CoolForms() -> impl IntoView {
 }
 
 #[component]
+fn UncontrolledInput() -> impl IntoView {
+    let (name, set_name) = signal("Uncontrolled".to_string());
+    let input_element: NodeRef<leptos::html::Input> = NodeRef::new();
+    let on_submit = move |ev: SubmitEvent| {
+        ev.prevent_default();
+
+        let value = input_element
+            .get()
+            .expect("<input> should be mounted")
+            .value();
+
+        set_name.set(value);
+    };
+
+    view! {
+        <form on:submit=on_submit> // on_submit defined below
+            <input type="text"
+                value=name
+                node_ref=input_element
+            />
+            <input type="submit" value="Submit"/>
+        </form>
+        <p>"Name is: " {name}</p>
+    }
+}
+
+#[component]
+fn Paragraph() -> impl IntoView {
+    let some_value = RwSignal::new("Write paragraph here!".to_string());
+
+    view! {
+        <textarea
+            prop:value=move || some_value.get()
+            on:input:target=move |ev| some_value.set(ev.target().value())
+        >
+            {some_value}
+        </textarea>
+    }
+}
+
+#[component]
+fn Unique() -> impl IntoView {
+    let (value, set_value) = signal(0i32);
+
+    view! {
+        <select
+            on:change:target=move |ev| {
+                set_value.set(ev.target().value().parse().unwrap());
+            }
+            prop:value=move || value.get().to_string()
+        >
+            <option value="0">"0"</option>
+            <option value="1">"1"</option>
+            <option value="2">"2"</option>
+        </select>
+        // a button that will cycle through the options
+        <button on:click=move |_| set_value.update(|n| {
+                if *n == 2 {
+                    *n = 0;
+                } else {
+                    *n += 1;
+                }
+            }
+        )>
+            "Next Option"
+        </button>
+    }
+}
+
+#[component]
+fn Selecter() -> impl IntoView {
+    let (value, set_value) = signal(0i32);
+
+    view! {
+        <p>
+            "Select an option"
+        </p>
+        <select
+            on: change: target = move |ev| {
+                set_value.set(ev.target().value().parse().unwrap());
+            }
+            prop: value = move || value.get().to_string()
+        >
+            <option value="0">"0"</option>
+            <option value="1">"1"</option>
+            <option value="2">"2"</option>
+        </select>
+    }
+}
+
+#[component]
 fn App() -> impl IntoView {
     let (count, set_count) = signal(0);
     let double_count = move || count.with( |counter| *counter * 2);
@@ -320,6 +414,7 @@ fn App() -> impl IntoView {
     let (name, set_name) = signal(String::new());
     
     view! {
+        <UncontrolledInput/>
         <input type = "text"
         on: input: target = move |ev| {
             set_name.set(ev.target().value());
@@ -329,6 +424,13 @@ fn App() -> impl IntoView {
         <p>"Name is: " {name}</p>
         
         <CoolForms/>
+        <Paragraph/>
+        <br/>
+        <Unique/>
+        <br/>
+        <Selecter/>
+        <br/>
+
         <button 
             on:click = move |_| set_count.update( |counter| *counter += 1 ) 
             class:red = move || count.with( |counter| counter % 2 == 1) 
